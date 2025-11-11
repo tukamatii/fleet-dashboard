@@ -17,9 +17,7 @@ targetCustomizations:
         okbtsp.corp/monitoring-aggregator: "true"
     helm:
       takeOwnership: true
-      chart: postgresql
-      repo: https://charts.bitnami.com/bitnami
-      version: 18.1.8
+      chart: ./postgres-helm
       valuesFiles:
         - postgres-values.yaml
 
