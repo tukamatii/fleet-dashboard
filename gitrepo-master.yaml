@@ -4,8 +4,8 @@ metadata:
   labels:
     okbtsp.corp/department: OIT
     okbtsp.corp/owner: baranav
-    okbtsp.corp/project: PROJECT_NAME
-  name: PROJECT_NAME
+    okbtsp.corp/project: dashboard
+  name: dashboard
   namespace: fleet-default
 spec:
   branch: master
@@ -17,9 +17,9 @@ spec:
     force: true
   forceSyncGeneration: 2
   paths:
-    - manifests
+    - postgres
   pollingInterval: 1m0s
-  repo: GIT_URL
+  repo: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/fleet-dashboard.git
   targets:
     - name: management
       clusterSelector:

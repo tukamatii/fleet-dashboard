@@ -5,7 +5,7 @@ metadata:
     okbtsp.corp/department: OIT
     okbtsp.corp/owner: baranav
     okbtsp.corp/project: dashboard
-  name: dashboard
+  name: dashboard-test
   namespace: fleet-default
 spec:
   branch: dev
