@@ -1,12 +1,12 @@
 # fleet.yaml
-defaultNamespace: grafana-postgres
+defaultNamespace: grafana
 
 namespaceLabels:
   okbtsp.corp/department: OIT
   okbtsp.corp/owner: baranav
-  okbtsp.corp/project: grafana-postgres
+  okbtsp.corp/project: grafana
 
-name: grafana-postgres
+name: grafana
 
 # Кастомизация под кластеры
 targetCustomizations:
@@ -15,11 +15,8 @@ targetCustomizations:
     clusterSelector:
       matchLabels:
         okbtsp.corp/monitoring-aggregator: "true"
-    helm:
-      takeOwnership: true
-      chart: ./postgres-helm
-      valuesFiles:
-        - postgres-values.yaml
+    kustomize:
+      dir: "full"
 
   - name: namespace-only-placeholder
     clusterSelector:
@@ -33,3 +30,4 @@ dependsOn:
       matchLabels:
         okbtsp.corp/project: external-secrets
   - name: prom-operator
+  - name: stackgres
