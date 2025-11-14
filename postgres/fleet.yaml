@@ -32,4 +32,4 @@ dependsOn:
       matchLabels:
         okbtsp.corp/project: external-secrets
   - name: prom-operator
-  - name: stackgres
+  - name: postgres-operator
