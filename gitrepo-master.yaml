@@ -18,6 +18,7 @@ spec:
   forceSyncGeneration: 2
   paths:
     - postgres
+    - grafana
   pollingInterval: 1m0s
   repo: ssh://git@gitlab.okbtsp.corp:2222/oit/k8s/fleet-dashboard.git
   targets:
