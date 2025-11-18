@@ -109,6 +109,8 @@ spec:
         repo2-cipher-type: aes-256-cbc
         repo2-s3-uri-style: path
         repo2-s3-ca-file: /etc/pgbackrest/conf.d/minio.crt
+        compress-type: zst
+        compress-level: "19"
       repos:
         - name: repo1
           schedules:
@@ -225,7 +227,7 @@ spec:
             value: "60"
       config:
         global:
-          pool_mode: transaction
+          pool_mode: session
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

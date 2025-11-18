@@ -6,7 +6,7 @@ namespaceLabels:
   okbtsp.corp/owner: baranav
   okbtsp.corp/project: grafana
 
-name: grafana-postgres
+name: grafana
 
 # Кастомизация под кластеры
 targetCustomizations:
