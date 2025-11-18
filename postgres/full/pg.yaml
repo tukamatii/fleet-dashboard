@@ -1,0 +1,243 @@
+apiVersion: pgv2.percona.com/v2
+kind: PerconaPGCluster
+metadata:
+  name: grafana-pg
+  annotations:
+    pgv2.percona.com/custom-patroni-version: 4
+spec:
+  crVersion: "2.8.0"
+
+  postgresVersion: 17
+  imagePullPolicy: Always
+  image: perconalab/percona-postgresql-operator:2.7.0-ppg17.5.2-postgres
+
+  # --- Users ---
+  users:
+    - name: grafana
+      databases:
+        - "grafana"
+      options: "NOSUPERUSER"
+      password:
+        type: AlphaNumeric
+      secretName: "grafana-credentials"
+      grantPublicSchemaAccess: true
+
+    - name: postgres
+      password:
+        type: AlphaNumeric
+      secretName: "postgres-credentials"
+
+  # --- Instances ---
+  instances:
+    - name: instance1
+      replicas: 3
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2.0
+          memory: 4Gi
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsNonRoot: true
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsGroup: 1001
+        supplementalGroups:
+          - 1001
+        sysctls:
+          - name: net.ipv4.tcp_keepalive_time
+            value: "600"
+          - name: net.ipv4.tcp_keepalive_intvl
+            value: "60"
+      walVolumeClaimSpec:
+        storageClassName: "vsphere-csi"
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+      dataVolumeClaimSpec:
+        storageClassName: "vsphere-csi"
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+          limits:
+            storage: 5Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/data: postgres
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: In
+                    values: [""]
+      tolerations:
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"
+
+  # --- Backups ---
+  backups:
+    trackLatestRestorableTime: true
+    enabled: true
+    pgbackrest:
+      image: docker.io/percona/percona-pgbackrest:2.55.0
+      configuration:
+        - secret:
+            name: pgo-additional-conf
+      global:
+        repo1-path: /pgbackrest/repo1
+        repo2-path: /grafana
+        repo1-retention-full: "2"
+        repo1-retention-full-type: time
+        repo2-retention-full: "14"
+        repo2-retention-full-type: time
+        repo1-cipher-type: aes-256-cbc
+        repo2-cipher-type: aes-256-cbc
+        repo2-s3-uri-style: path
+        repo2-s3-ca-file: /etc/pgbackrest/conf.d/minio.crt
+        compress-type: zst
+        compress-level: "19"
+      repos:
+        - name: repo1
+          schedules:
+            full: "0 5 * * 0"
+            differential: 0 6 * * *
+          volume:
+            volumeClaimSpec:
+              storageClassName: "vsphere-csi"
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: "50Gi"
+        - name: repo2
+          schedules:
+            full: "0 2 * * 0"
+            differential: 0 4 * * *
+          s3:
+            bucket: "pg-k8s-backups"
+            endpoint: "https://minio.okbtsp.corp"
+            region: "us-east-1"
+      jobs:
+        restartPolicy: OnFailure
+        backoffLimit: 5
+        ttlSecondsAfterFinished: 1800
+        resources:
+          requests:
+            cpu: 150m
+            memory: 120Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          fsGroup: 1001
+          runAsUser: 1001
+          runAsNonRoot: true
+          fsGroupChangePolicy: "OnRootMismatch"
+          runAsGroup: 1001
+          supplementalGroups:
+            - 1001
+          sysctls:
+            - name: net.ipv4.tcp_keepalive_time
+              value: "600"
+            - name: net.ipv4.tcp_keepalive_intvl
+              value: "60"
+
+      repoHost:
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 150m
+            memory: 120Mi
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/infra
+                      operator: In
+                      values: [""]
+        tolerations:
+          - key: "node-role.kubernetes.io/infra"
+            operator: "Equal"
+            value: ""
+            effect: "NoSchedule"
+        securityContext:
+          fsGroup: 1001
+          runAsUser: 1001
+          runAsNonRoot: true
+          fsGroupChangePolicy: "OnRootMismatch"
+          runAsGroup: 1001
+          supplementalGroups:
+            - 1001
+          sysctls:
+            - name: net.ipv4.tcp_keepalive_time
+              value: "600"
+            - name: net.ipv4.tcp_keepalive_intvl
+              value: "60"
+
+  # --- Extensions ---
+  extensions:
+    builtin:
+      pg_stat_monitor: true
+      pg_audit: true
+
+  # --- Proxy (pgBouncer) ---
+  proxy:
+    pgBouncer:
+      image: docker.io/percona/percona-pgbouncer:1.24.1
+      replicas: 2
+      exposeSuperusers: true
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+      expose:
+        type: ClusterIP
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsNonRoot: true
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsGroup: 1001
+        supplementalGroups:
+          - 1001
+        sysctls:
+          - name: net.ipv4.tcp_keepalive_time
+            value: "600"
+          - name: net.ipv4.tcp_keepalive_intvl
+            value: "60"
+      config:
+        global:
+          pool_mode: session
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: In
+                    values: [""]
+      tolerations:
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"

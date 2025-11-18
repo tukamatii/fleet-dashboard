@@ -1,0 +1,11 @@
+apiVersion: pgv2.percona.com/v2
+kind: PerconaPGBackup
+metadata:
+  name: another-fullbackup
+  namespace: grafana
+spec:
+  pgCluster: grafana-pg
+
+  repoName: repo2
+  options:
+    - --type=full

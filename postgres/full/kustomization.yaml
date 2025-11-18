@@ -1,0 +1,5 @@
+resources:
+  - pg.yaml
+  - external-secret.yaml
+
+namespace: grafana

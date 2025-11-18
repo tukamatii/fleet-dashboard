@@ -1,0 +1,5 @@
+# DO NOT include in kustomize
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grafana

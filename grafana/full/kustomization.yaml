@@ -1,0 +1,6 @@
+resources:
+  - external-secrets.yaml
+  - external-gateway.yaml
+  - dep.yaml
+  - cm.yaml
+namespace: grafana
