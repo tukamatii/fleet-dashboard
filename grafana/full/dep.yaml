@@ -37,7 +37,7 @@ spec:
               name: http
           env:
             - name: GF_SERVER_ROOT_URL
-              value: "https://grafana.okbtsp.corp/"
+              value: "https://grafana.okbtsp.com/"
             - name: GF_DATABASE_SSL_MODE
               value: "require"
             - name: GF_DATABASE_TYPE
